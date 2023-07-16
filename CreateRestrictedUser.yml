@@ -1,0 +1,32 @@
+---
+- name: Create SSH restricted Linux User
+  hosts: all
+  become: true
+  become_user: root
+  tasks: 
+    - name: Ensure ssh-users group is created
+      group: 
+        name: ssh-users
+        gid: 3000
+        state: present
+    - name: Create ssh allowed user
+      user:
+        name: "{{ user }}"
+        comment: "SSH Allowed User"
+        uid: "{{ uid }}"
+        group: ssh-users
+        password: "ssh-my-pass-secret"
+        home: /home/"{{ user }}"
+        shell: /bin/bash
+        append: yes
+      when: remote_login == "True"
+
+    - name: Create ssh Denied user
+      user:
+        name: "{{ user }}"
+        comment: "SSH Denied User"
+        uid: "{{ uid }}"
+        password: "ssh-my-pass-secret"
+        home: /home/"{{ user }}"
+        shell: /bin/bash
+      when: remote_login == "False"
