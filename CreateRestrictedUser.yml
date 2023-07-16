@@ -9,24 +9,34 @@
         name: ssh-users
         gid: 3000
         state: present
-    - name: Create ssh allowed user
+      notify: 
+        - Restrict SSH in SSHD Config
+        - Restart sshd service
+        
+    - name: Create SSH Denied user
       user:
         name: "{{ user }}"
-        comment: "SSH Allowed User"
+        comment: "Some User"
         uid: "{{ uid }}"
-        group: ssh-users
         password: "ssh-my-pass-secret"
         home: /home/"{{ user }}"
         shell: /bin/bash
+
+    - name: Allow SSH Access
+      user:
+        name: "{{ user }}"
+        group: ssh-users
         append: yes
       when: remote_login == "True"
 
-    - name: Create ssh Denied user
-      user:
-        name: "{{ user }}"
-        comment: "SSH Denied User"
-        uid: "{{ uid }}"
-        password: "ssh-my-pass-secret"
-        home: /home/"{{ user }}"
-        shell: /bin/bash
-      when: remote_login == "False"
+  handlers:
+    - name: Restrict SSH in SSHD Config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: AllowGroups ssh-users
+        state: present
+      
+    - name: Restart sshd service
+      service: 
+        name: sshd
+        state: restarted
